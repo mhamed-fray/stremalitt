@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - ZAIDASH
+name: Build and deploy Python app to Azure Web App - ZaiDash
 
 on:
   push:
@@ -65,14 +65,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_977B063B3D524E38A040FCEB3D85925B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3831BFD2603A4C9EB8C4D432F963BC3D }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7DFEEECD64ED414ABF69F7FDBEAA7B1E }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0EBFA67B0557404FB9CF7A3236DAFAA3 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F9E632647E2C41EB9BBDF76570252558 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C773EDD7FAC243318B6B02EDE8C56F27 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
         with:
-          app-name: 'ZAIDASH'
+          app-name: 'ZaiDash'
           slot-name: 'Production'
           
