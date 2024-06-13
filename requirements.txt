@@ -1,7 +1,7 @@
 streamlit
+matplotlib
 pandas
 openpyxl
 Pillow
 plotly
 numpy
-matplotlib
