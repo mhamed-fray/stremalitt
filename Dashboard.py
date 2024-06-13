@@ -45,8 +45,9 @@ fl = st.file_uploader(":file_folder: Upload a file", type=(["csv", "txt", "xlsx"
 if fl is not None:
     df = pd.read_csv(fl, delimiter=';', encoding='ISO-8859-1')
 else:
-    os.chdir(r"C:\Users\MSI\Desktop\PythonStreamlit")
-    df = pd.read_csv("Superstore22.csv", delimiter=';', encoding='ISO-8859-1')
+    url = "https://github.com/mhamed-fray/stremalitt/raw/master/Superstore.csv"
+    df = pd.read_csv(url, delimiter=';', encoding='ISO-8859-1')
+
 
 col1, col2 = st.columns((2))
 df["Order Date"] = pd.to_datetime(df["Order Date"], format="%d/%m/%Y")
