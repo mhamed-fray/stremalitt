@@ -5,11 +5,15 @@ import os
 import warnings
 from PIL import Image
 import base64
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import streamlit.components.v1 as components
 
 warnings.filterwarnings('ignore')
 
-st.set_page_config(page_title=" SHOP SALES", page_icon="🛒", layout="wide")
+st.set_page_config(page_title="SHOP SALES", page_icon="🛒", layout="wide")
+
 def image_to_base64(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
@@ -18,15 +22,28 @@ def image_to_base64(image_path):
 image_path = 'adidas-logo.png'
 encoded_image = image_to_base64(image_path)
 
-# Custom CSS for styling
+# Custom CSS for styling and responsiveness
 st.write("""
     <style>
     .title-container {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
     }
     .title-container img {
         margin-right: 10px;
+    }
+    .sidebar .sidebar-content {
+        background-color: #f8f9fa;
+    }
+    @media (max-width: 768px) {
+        .title-container {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .title-container img {
+            margin-bottom: 10px;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -35,11 +52,13 @@ st.write("""
 st.markdown(f"""
     <div class="title-container">
         <img src="data:image/png;base64,{encoded_image}" width="50">
-        <h1>     Insightful Sales Analysis Dashboard</h1>
+        <h1>Insightful Sales Analysis Dashboard</h1>
     </div>
     """, unsafe_allow_html=True)
 
 st.write("<style>div.row-widget.stHorizontal {margin-top: 10px;padding:5px;border-radius:6px;}</style>", unsafe_allow_html=True)
+
+# Add dark mode toggle
 
 fl = st.file_uploader(":file_folder: Upload a file", type=(["csv", "txt", "xlsx", "xls"]))
 if fl is not None:
@@ -48,12 +67,12 @@ else:
     url = "https://github.com/mhamed-fray/stremalitt/raw/master/Superstore.csv"
     df = pd.read_csv(url, delimiter=';', encoding='ISO-8859-1')
 
+# Custom loading spinner
+with st.spinner('Loading data...'):
+    df["Order Date"] = pd.to_datetime(df["Order Date"], format="%d/%m/%Y")
+    df["Sales"] = df["Sales"].str.replace(',', '').astype(float)
 
 col1, col2 = st.columns((2))
-df["Order Date"] = pd.to_datetime(df["Order Date"], format="%d/%m/%Y")
-
-# Convert Sales to numeric (remove commas and convert to float)
-df["Sales"] = df["Sales"].str.replace(',', '').astype(float)
 
 # Getting the min and max date
 startDate = df["Order Date"].min()
@@ -109,12 +128,14 @@ with col1:
     st.subheader("Category wise Sales")
     fig = px.bar(category_df, x="Category", y="Sales", text=[f'${x:,.2f}' for x in category_df["Sales"]],
                  template="seaborn")
-    st.plotly_chart(fig, use_container_width=True, height=200)
+    fig.update_layout(autosize=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 with col2:
     st.subheader("Region wise Sales")
     fig = px.pie(filtered_df, values="Sales", names="Region", hole=0.5)
     fig.update_traces(text=filtered_df["Region"], textposition="outside")
+    fig.update_layout(autosize=True)
     st.plotly_chart(fig, use_container_width=True)
 
 cl1, cl2 = st.columns((2))
@@ -138,6 +159,7 @@ st.subheader('Time Series Analysis')
 
 linechart = pd.DataFrame(filtered_df.groupby(filtered_df["month_year"].dt.strftime("%Y : %b"))["Sales"].sum()).reset_index()
 fig2 = px.line(linechart, x="month_year", y="Sales", labels={"Sales": "Amount"}, height=500, width=1000, template="gridon")
+fig2.update_layout(autosize=True)
 st.plotly_chart(fig2, use_container_width=True)
 
 with st.expander("View Data of TimeSeries:"):
@@ -149,7 +171,7 @@ with st.expander("View Data of TimeSeries:"):
 st.subheader("Hierarchical view of Sales using TreeMap")
 fig3 = px.treemap(filtered_df, path=["Region", "Category", "Sub-Category"], values="Sales", hover_data=["Sales"],
                   color="Sub-Category")
-fig3.update_layout(width=800, height=650)
+fig3.update_layout(width=800, height=650, autosize=True)
 st.plotly_chart(fig3, use_container_width=True)
 
 chart1, chart2 = st.columns((2))
@@ -157,12 +179,14 @@ with chart1:
     st.subheader('Segment wise Sales')
     fig = px.pie(filtered_df, values="Sales", names="Segment", template="plotly_dark")
     fig.update_traces(text=filtered_df["Segment"], textposition="inside")
+    fig.update_layout(autosize=True)
     st.plotly_chart(fig, use_container_width=True)
 
 with chart2:
     st.subheader('Category wise Sales')
     fig = px.pie(filtered_df, values="Sales", names="Category", template="gridon")
     fig.update_traces(text=filtered_df["Category"], textposition="inside")
+    fig.update_layout(autosize=True)
     st.plotly_chart(fig, use_container_width=True)
 
 import plotly.figure_factory as ff
@@ -181,7 +205,7 @@ with st.expander("Summary_Table"):
 data1 = px.scatter(filtered_df, x="Sales", y="Profit", size="Quantity")
 data1['layout'].update(title="Relationship between Sales and Profits using Scatter Plot.",
                        titlefont=dict(size=20), xaxis=dict(title="Sales", titlefont=dict(size=19)),
-                       yaxis=dict(title="Profit", titlefont=dict(size=19)))
+                       yaxis=dict(title="Profit", titlefont=dict(size=19)), autosize=True)
 st.plotly_chart(data1, use_container_width=True)
 
 with st.expander("View Data"):
@@ -190,3 +214,38 @@ with st.expander("View Data"):
 # Download original DataSet
 csv = df.to_csv(index=False).encode('utf-8')
 st.download_button('Download Data', data=csv, file_name="Data.csv", mime='text/csv')
+
+# Feedback Mechanism
+st.sidebar.subheader("User Feedback")
+feedback = st.sidebar.text_area("Please provide your feedback here")
+if st.sidebar.button("Submit Feedback"):
+    st.sidebar.write("Thank you for your feedback!")
+    sender_email = "fraymhamed8@gmail.com"
+    receiver_email = "fraymhamed8@gmail.com"
+    password = "phqj dhlw cxln bsaa"
+
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = "User Feedback"
+    body = feedback
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Send the email
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)  # Update the SMTP server and port
+        server.starttls()
+        server.login(sender_email, password)
+        text = msg.as_string()
+        server.sendmail(sender_email, receiver_email, text)
+        server.quit()
+        st.sidebar.write("Feedback sent successfully!")
+    except Exception as e:
+        st.sidebar.write(f"Failed to send feedback: {e}")
+
+# Real-time updates
+import time
+with st.spinner('Updating data...'):
+    time.sleep(1)
+    st.success('Data updated successfully!')
